@@ -2,6 +2,7 @@ import { Toaster } from "@Productlytics/ui/components/sonner";
 import { HeadContent, Outlet, createRootRouteWithContext } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 
+import { Navbar } from "@/components/navbar";
 import { ThemeProvider } from "@/components/theme-provider";
 
 import "../index.css";
@@ -39,8 +40,11 @@ function RootComponent() {
         disableTransitionOnChange
         storageKey="vite-ui-theme"
       >
-        <div className="h-svh">
-          <Outlet />
+        <div className="flex h-svh flex-col">
+          <Navbar />
+          <main className="flex-1">
+            <Outlet />
+          </main>
         </div>
         <Toaster richColors />
       </ThemeProvider>
