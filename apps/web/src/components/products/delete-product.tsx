@@ -5,7 +5,15 @@ import { toast } from "sonner";
 
 import { deleteProduct } from "@/api/products";
 
-export function DeleteProduct({ id, name }: { id: number; name: string }) {
+export function DeleteProduct({
+  id,
+  name,
+  onDeleted,
+}: {
+  id: number;
+  name: string;
+  onDeleted?: () => void;
+}) {
   const queryClient = useQueryClient();
 
   const remove = useMutation({
@@ -13,6 +21,7 @@ export function DeleteProduct({ id, name }: { id: number; name: string }) {
     onSuccess: () => {
       toast.success(`${name} deleted`);
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      onDeleted?.();
     },
     onError: (err) => {
       toast.error(err.message);

@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@Productlytics/ui/components/card";
+import { Link } from "@tanstack/react-router";
 
 import type { ProductResponse } from "@/api/products";
 import { DeleteProduct } from "@/components/products/delete-product";
@@ -14,7 +15,15 @@ export function ProductCard({ product }: { product: ProductResponse }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{product.name}</CardTitle>
+        <CardTitle>
+          <Link
+            to="/products/$productId"
+            params={{ productId: String(product.id) }}
+            className="hover:underline"
+          >
+            {product.name}
+          </Link>
+        </CardTitle>
         <CardDescription>{product.sku}</CardDescription>
         <CardAction>
           <DeleteProduct id={product.id} name={product.name} />

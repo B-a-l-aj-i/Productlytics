@@ -110,6 +110,24 @@ productsRouter.post("/", requireAuth, async (req, res) => {
   }
 });
 
+productsRouter.get("/:id", requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id < 1) {
+    res.status(400).json({ error: "Invalid product id" });
+    return;
+  }
+
+  const product = await db.query.products.findFirst({
+    where: and(eq(products.id, id), eq(products.orgId, req.user!.orgId)),
+  });
+
+  if (!product) {
+    res.status(404).json({ error: "Product not found" });
+    return;
+  }
+  res.json(product);
+});
+
 productsRouter.delete("/:id", requireAuth, async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id < 1) {
