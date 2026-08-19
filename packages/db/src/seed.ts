@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 import { drizzle } from "drizzle-orm/node-postgres";
@@ -70,6 +72,9 @@ async function main() {
         manufacturedOn: `2026-${String((i % 12) + 1).padStart(2, "0")}-15`,
         countryOfOrigin: COUNTRIES[(i + orgIndex) % COUNTRIES.length],
         status: i % 2 === 0 ? "published" : "draft",
+        // Publishing normally mints publicId in the PATCH route; seeded
+        // published rows need one too or their passport URLs don't exist.
+        publicId: i % 2 === 0 ? randomUUID() : null,
         attributes: ATTRIBUTES[category][i % 2],
       });
     }
