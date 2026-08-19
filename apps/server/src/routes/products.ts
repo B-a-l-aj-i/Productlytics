@@ -110,6 +110,26 @@ productsRouter.post("/", requireAuth, async (req, res) => {
   }
 });
 
+productsRouter.delete("/:id", requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id < 1) {
+    res.status(400).json({ error: "Invalid product id" });
+    return;
+  }
+
+  // org filter in the WHERE = other org's id deletes nothing → 404
+  const deleted = await db
+    .delete(products)
+    .where(and(eq(products.id, id), eq(products.orgId, req.user!.orgId)))
+    .returning({ id: products.id });
+
+  if (deleted.length === 0) {
+    res.status(404).json({ error: "Product not found" });
+    return;
+  }
+  res.status(204).end();
+});
+
 // Postgres unique_violation; drizzle may wrap the pg error in `cause`.
 function isUniqueViolation(err: unknown): boolean {
   if (typeof err !== "object" || err === null) return false;

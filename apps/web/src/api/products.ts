@@ -58,6 +58,18 @@ export interface ProductListParams {
   category?: "Battery" | "Steel" | "Textile";
 }
 
+export async function deleteProduct(id: number): Promise<void> {
+  const res = await fetch(`${API_URL}/api/products/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.error ?? "Could not delete product");
+  }
+}
+
 export async function getProducts({
   page = 1,
   limit = 20,

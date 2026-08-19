@@ -1,5 +1,6 @@
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -7,6 +8,7 @@ import {
 } from "@Productlytics/ui/components/card";
 
 import type { ProductResponse } from "@/api/products";
+import { DeleteProduct } from "@/components/products/delete-product";
 
 export function ProductCard({ product }: { product: ProductResponse }) {
   return (
@@ -14,6 +16,9 @@ export function ProductCard({ product }: { product: ProductResponse }) {
       <CardHeader>
         <CardTitle>{product.name}</CardTitle>
         <CardDescription>{product.sku}</CardDescription>
+        <CardAction>
+          <DeleteProduct id={product.id} name={product.name} />
+        </CardAction>
       </CardHeader>
       <CardContent className="flex flex-col gap-1 text-xs">
         <Row label="Status">
