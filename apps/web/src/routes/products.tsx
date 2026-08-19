@@ -1,10 +1,4 @@
 import { Button } from "@Productlytics/ui/components/button";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyTitle,
-} from "@Productlytics/ui/components/empty";
-import { Skeleton } from "@Productlytics/ui/components/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
@@ -20,6 +14,8 @@ export const Route = createFileRoute("/products")({
 
 function RouteComponent() {
   const [showForm, setShowForm] = useState(false);
+
+  const list = useQuery({ queryKey: ["products"], queryFn: getProducts });
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6">
@@ -37,42 +33,11 @@ function RouteComponent() {
         </div>
       )}
 
-      <ProductList />
-    </div>
-  );
-}
-
-function ProductList() {
-  const list = useQuery({ queryKey: ["products"], queryFn: getProducts });
-
-  if (list.isPending) {
-    return (
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Skeleton className="h-40" />
-        <Skeleton className="h-40" />
-        <Skeleton className="h-40" />
+        {list.data?.map((product) => (
+          <ProductCard key={product.id} product={product} />
+        ))}
       </div>
-    );
-  }
-
-  if (list.isError) {
-    return <p className="mt-6 text-sm text-destructive">{list.error.message}</p>;
-  }
-
-  if (list.data.length === 0) {
-    return (
-      <Empty className="mt-6">
-        <EmptyTitle>No products yet</EmptyTitle>
-        <EmptyDescription>Create your first product to see it here.</EmptyDescription>
-      </Empty>
-    );
-  }
-
-  return (
-    <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {list.data.map((product) => (
-        <ProductCard key={product.id} product={product} />
-      ))}
     </div>
   );
 }
