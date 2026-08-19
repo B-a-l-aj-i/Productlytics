@@ -50,8 +50,15 @@ export interface ProductListResponse {
   limit: number;
 }
 
-export async function getProducts(page = 1, limit = 20): Promise<ProductListResponse> {
-  const res = await fetch(`${API_URL}/api/products?page=${page}&limit=${limit}`, {
+export async function getProducts(
+  page = 1,
+  limit = 20,
+  search?: string,
+): Promise<ProductListResponse> {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (search) params.set("search", search);
+
+  const res = await fetch(`${API_URL}/api/products?${params}`, {
     credentials: "include",
   });
 

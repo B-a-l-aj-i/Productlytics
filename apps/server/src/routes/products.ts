@@ -1,6 +1,6 @@
 import { db, products } from "@Productlytics/db";
 import express, { Router } from "express";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, ilike, or } from "drizzle-orm";
 import { z } from "zod";
 
 import { requireAuth } from "../lib/session";
@@ -29,6 +29,7 @@ productsRouter.use(requireAuth);
 const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
+  search: z.string().trim().max(200).optional(),
 });
 
 productsRouter.get("/", requireAuth, async (req, res) => {
@@ -38,8 +39,15 @@ productsRouter.get("/", requireAuth, async (req, res) => {
     return;
   }
 
-  const { page, limit } = parsed.data;
-  const where = eq(products.orgId, req.user!.orgId);
+  const { page, limit, search } = parsed.data;
+
+  const conditions = [eq(products.orgId, req.user!.orgId)];
+  if (search) {
+    // Escape ilike wildcards so a literal "%" in the box can't match everything.
+    const pattern = `%${search.replace(/[\\%_]/g, "\\$&")}%`;
+    conditions.push(or(ilike(products.name, pattern), ilike(products.sku, pattern))!);
+  }
+  const where = and(...conditions);
 
   const [data, total] = await Promise.all([
     db
