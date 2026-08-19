@@ -43,8 +43,15 @@ export async function createProduct(
   return res.json();
 }
 
-export async function getProducts(): Promise<ProductResponse[]> {
-  const res = await fetch(`${API_URL}/api/products`, {
+export interface ProductListResponse {
+  data: ProductResponse[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export async function getProducts(page = 1, limit = 20): Promise<ProductListResponse> {
+  const res = await fetch(`${API_URL}/api/products?page=${page}&limit=${limit}`, {
     credentials: "include",
   });
 

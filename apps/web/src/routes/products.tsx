@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { getProducts } from "@/api/products";
 import { CreateProduct } from "@/components/products/create-product";
+import { Pagination } from "@/components/products/pagination";
 import { ProductCard } from "@/components/products/product-card";
 
 export const Route = createFileRoute("/products")({
@@ -14,8 +15,12 @@ export const Route = createFileRoute("/products")({
 
 function RouteComponent() {
   const [showForm, setShowForm] = useState(false);
+  const [page, setPage] = useState(1);
 
-  const list = useQuery({ queryKey: ["products"], queryFn: getProducts });
+  const list = useQuery({
+    queryKey: ["products", page],
+    queryFn: () => getProducts(page),
+  });
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6">
@@ -34,10 +39,19 @@ function RouteComponent() {
       )}
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {list.data?.map((product) => (
+        {list.data?.data.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
       </div>
+
+      {list.data && (
+        <Pagination
+          page={page}
+          total={list.data.total}
+          limit={list.data.limit}
+          onChange={setPage}
+        />
+      )}
     </div>
   );
 }

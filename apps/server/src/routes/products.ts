@@ -1,6 +1,6 @@
 import { db, products } from "@Productlytics/db";
 import express, { Router } from "express";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { requireAuth } from "../lib/session";
@@ -26,12 +26,33 @@ export const productsRouter = Router() as express.Router;
 
 productsRouter.use(requireAuth);
 
+const listQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+});
+
 productsRouter.get("/", requireAuth, async (req, res) => {
-  const allProducts = await db
-    .select()
-    .from(products)
-    .where(eq(products.orgId, req.user!.orgId));
-  res.json(allProducts);
+  const parsed = listQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid query params" });
+    return;
+  }
+
+  const { page, limit } = parsed.data;
+  const where = eq(products.orgId, req.user!.orgId);
+
+  const [data, total] = await Promise.all([
+    db
+      .select()
+      .from(products)
+      .where(where)
+      .orderBy(desc(products.createdAt))
+      .limit(limit)
+      .offset((page - 1) * limit),
+    db.$count(products, where),
+  ]);
+
+  res.json({ data, total, page, limit });
 });
 
 productsRouter.post("/", requireAuth, async (req, res) => {
