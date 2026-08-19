@@ -30,6 +30,9 @@ export const products = pgTable(
       .references(() => organizations.id),
     name: text("name").notNull(),
     sku: text("sku").notNull(), // Stock Keeping Unit - unique identifier for the product
+    // Public passport URL key — minted on first publish, null until then.
+    // Unguessable; the internal id never appears in public URLs.
+    publicId: text("public_id").unique(),
     category: productCategory("category"),
     manufacturedOn: date("manufactured_on"),
     countryOfOrigin: char("country_of_origin", { length: 2 }),
