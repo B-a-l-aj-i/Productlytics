@@ -13,6 +13,7 @@ import { ArrowLeft, Copy, Pencil } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { ProductDocuments } from "@/components/products/documents";
 import { EditProduct } from "@/components/products/edit-product";
 
 import { getProduct, type ProductListResponse } from "@/api/products";
@@ -114,6 +115,8 @@ function ProductDetailPage() {
               </div>
             )}
           </div>
+
+          <ProductDocuments productId={p.id} />
 
           {p.status === "published" && p.publicId && (
             <div className="mt-2 flex items-center justify-between gap-2 border-t pt-3">

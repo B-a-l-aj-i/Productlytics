@@ -7,6 +7,7 @@ export interface PassportResponse {
   countryOfOrigin: string | null;
   manufacturedOn: string | null;
   attributes: Record<string, string>;
+  documents: { id: number; originalFilename: string }[];
 }
 
 export async function getPassport(publicId: string): Promise<PassportResponse> {

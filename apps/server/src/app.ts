@@ -4,6 +4,7 @@ import cors from "cors";
 import express from "express";
 
 import { authRouter } from "./routes/auth";
+import { documentsRouter } from "./routes/documents";
 import { productsRouter } from "./routes/products";
 import { publicRouter } from "./routes/public";
 
@@ -26,3 +27,4 @@ app.get("/", (_req, res) => {
 app.use("/api/auth", authRouter);
 app.use("/api/products", productsRouter);
 app.use("/api/p", publicRouter);
+app.use("/api", documentsRouter);

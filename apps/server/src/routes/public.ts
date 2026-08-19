@@ -1,4 +1,4 @@
-import { db, products } from "@Productlytics/db";
+import { db, documents, products } from "@Productlytics/db";
 import express, { Router } from "express";
 import { and, eq } from "drizzle-orm";
 
@@ -21,6 +21,10 @@ publicRouter.get("/:publicId", async (req, res) => {
     return;
   }
 
+  const docs = await db.query.documents.findMany({
+    where: eq(documents.productId, product.id),
+  });
+
   // Explicit allowlist — brief: no internal/cross-org info in the public response.
   res.json({
     name: product.name,
@@ -29,5 +33,7 @@ publicRouter.get("/:publicId", async (req, res) => {
     countryOfOrigin: product.countryOfOrigin,
     manufacturedOn: product.manufacturedOn,
     attributes: product.attributes,
+    // Document ids are safe to expose: serving is gated on published status.
+    documents: docs.map((d) => ({ id: d.id, originalFilename: d.originalFilename })),
   });
 });

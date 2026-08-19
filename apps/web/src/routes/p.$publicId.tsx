@@ -7,7 +7,9 @@ import {
 } from "@Productlytics/ui/components/card";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { FileText } from "lucide-react";
 
+import { documentUrl } from "@/api/documents";
 import { getPassport } from "@/api/passport";
 
 export const Route = createFileRoute("/p/$publicId")({
@@ -54,6 +56,24 @@ function PassportPage() {
           {Object.entries(p.attributes).map(([key, value]) => (
             <Row key={key} label={key} value={value} />
           ))}
+
+          {p.documents.length > 0 && (
+            <div className="mt-2 flex flex-col gap-1 border-t pt-3">
+              <p className="text-muted-foreground">Documents</p>
+              {p.documents.map((doc) => (
+                <a
+                  key={doc.id}
+                  href={documentUrl(doc.id)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-2 hover:underline"
+                >
+                  <FileText className="size-4 text-muted-foreground" />
+                  {doc.originalFilename}
+                </a>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
