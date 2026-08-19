@@ -25,8 +25,7 @@ account required. Unpublishing kills the link instantly.
 - **Node.js 20+**
 - **pnpm 10** — the repo pins `pnpm@10.26.2` via `packageManager`, so `corepack enable`
   gets you the right version (or `npm i -g pnpm`)
-- **PostgreSQL running on `localhost:5432`** — no Docker in this repo (deliberate, see
-  below). Any existing database works; the default `postgres` database is fine.
+- **PostgreSQL running on `localhost:5432`** — no Docker in this repo.
 
 ## How to run it
 
@@ -80,6 +79,21 @@ A quick tour: log in as `user1`, open a published product, copy its passport lin
 the detail page, open it in a private window (no session needed), then unpublish and
 reload — the link 404s.
 
+## Stack
+
+- React with TanStack Router (file-based routes) and TanStack Query
+- Express 5 with zod validation
+- PostgreSQL with Drizzle ORM (schema in TypeScript, versioned SQL migrations)
+- TypeScript everywhere, pnpm workspaces monorepo
+
+## Data model
+
+<!-- screenshot goes here -->
+
+Four tables: `organizations` → `users` and `products` (both carry `org_id`),
+`products` → `documents`. SKU unique per org, `public_id` unique when set,
+documents cascade-delete with their product.
+
 ## API surface
 
 | Method                | Path                          | Notes                                          |
@@ -105,3 +119,33 @@ Productlytics/
     ├── env/          # zod-validated env schemas (server + web)
     └── config/       # shared tsconfig
 ```
+
+## Decisions and why
+
+- **JWT in an httpOnly cookie** — no session table needed, and page scripts can't
+  read the token. Trade-off: can't revoke before the 7-day expiry.
+- **`attributes` as JSONB** — keys are unknown in advance and only ever rendered,
+  so a separate key/value table would be extra work for nothing.
+- **Separate random `public_id` for passport URLs** — sequential ids can be
+  guessed and walked; a UUID link can't. Minted on first publish, never changes.
+- **SKU uniqueness as a DB constraint** — `UNIQUE (org_id, sku)` can't be raced
+  like an app-level check. The API turns the violation into a 409.
+- **Files on disk, metadata in the DB** — all disk access goes through one small
+  put/get/delete interface, so moving to S3 later touches one file.
+- **No DI, no service layer** — routes import the db directly and read top to
+  bottom. Tried factory injection first, removed it as over-engineering.
+
+## Deliberately left out
+
+- **Docker** — the brief allows a documented two-command equivalent, and a local
+  Postgres kept the stack one service smaller. `pnpm bootstrap && pnpm dev` is the
+  whole setup.
+- **S3 set** — the file uploads was not the core of this site so left the s3 setup
+
+## With another day
+
+- Test cases — ran out of time, so couldn't think about it.
+- Delete and update for uploaded documents (remove the row, then the file via
+  `storage.delete`).
+- Redirect logged-out visitors from `/products` to the login page instead of
+  showing failed requests.
