@@ -88,7 +88,7 @@ reload — the link 404s.
 
 ## Data model
 
-<!-- screenshot goes here -->
+ <img width="767" height="317" alt="image" src="https://github.com/user-attachments/assets/189199e5-faa2-474c-9eda-7074d5b861ab" />
 
 Four tables: `organizations` → `users` and `products` (both carry `org_id`),
 `products` → `documents`. SKU unique per org, `public_id` unique when set,
