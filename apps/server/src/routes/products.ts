@@ -30,6 +30,8 @@ const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   search: z.string().trim().max(200).optional(),
+  status: z.enum(["draft", "published"]).optional(),
+  category: z.enum(["Battery", "Steel", "Textile"]).optional(),
 });
 
 productsRouter.get("/", requireAuth, async (req, res) => {
@@ -39,13 +41,19 @@ productsRouter.get("/", requireAuth, async (req, res) => {
     return;
   }
 
-  const { page, limit, search } = parsed.data;
+  const { page, limit, search, status, category } = parsed.data;
 
   const conditions = [eq(products.orgId, req.user!.orgId)];
   if (search) {
     // Escape ilike wildcards so a literal "%" in the box can't match everything.
     const pattern = `%${search.replace(/[\\%_]/g, "\\$&")}%`;
     conditions.push(or(ilike(products.name, pattern), ilike(products.sku, pattern))!);
+  }
+  if (status) {
+    conditions.push(eq(products.status, status));
+  }
+  if (category) {
+    conditions.push(eq(products.category, category));
   }
   const where = and(...conditions);
 

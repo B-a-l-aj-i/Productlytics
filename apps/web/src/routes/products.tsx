@@ -19,6 +19,8 @@ function RouteComponent() {
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [category, setCategory] = useState("");
 
   // Debounce typing → one request 300ms after the last keystroke.
   useEffect(() => {
@@ -30,8 +32,18 @@ function RouteComponent() {
   }, [searchInput]);
 
   const list = useQuery({
-    queryKey: ["products", page, search],
-    queryFn: () => getProducts(page, 20, search || undefined),
+    queryKey: ["products", page, search, status, category],
+    queryFn: () =>
+      getProducts({
+        page,
+        search: search || undefined,
+        status: (status || undefined) as "draft" | "published" | undefined,
+        category: (category || undefined) as
+          | "Battery"
+          | "Steel"
+          | "Textile"
+          | undefined,
+      }),
   });
 
   return (
@@ -50,12 +62,39 @@ function RouteComponent() {
         </div>
       )}
 
-      <Input
-        className="mt-6 max-w-xs"
-        placeholder="Search name or SKU…"
-        value={searchInput}
-        onChange={(e) => setSearchInput(e.target.value)}
-      />
+      <div className="mt-6 flex flex-wrap items-center gap-2">
+        <Input
+          className="max-w-xs"
+          placeholder="Search name or SKU…"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+        />
+        <select
+          className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-xs outline-none"
+          value={status}
+          onChange={(e) => {
+            setStatus(e.target.value);
+            setPage(1);
+          }}
+        >
+          <option value="">All statuses</option>
+          <option value="draft">draft</option>
+          <option value="published">published</option>
+        </select>
+        <select
+          className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-xs outline-none"
+          value={category}
+          onChange={(e) => {
+            setCategory(e.target.value);
+            setPage(1);
+          }}
+        >
+          <option value="">All categories</option>
+          <option value="Battery">Battery</option>
+          <option value="Steel">Steel</option>
+          <option value="Textile">Textile</option>
+        </select>
+      </div>
 
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
