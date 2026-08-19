@@ -1,94 +1,107 @@
 # Productlytics
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, TanStack Router, Express, and more.
+Product passports. Organisations sign in to manage their product catalogue, then publish
+individual products to a public "passport" page that anyone with the link can view — no
+account required. Unpublishing kills the link instantly.
 
-## Features
+```
+  apps/web                              apps/server
+  React 19 + TanStack Router/Query      Express 5 + zod
+  http://localhost:3001                 http://localhost:3000
+        │                                     │
+        │  fetch + httpOnly JWT cookie        │  Drizzle ORM
+        ▼                                     ▼
+  ┌───────────┐                        ┌─────────────────────────────┐
+  │  browser  │                        │  PostgreSQL (local)         │
+  └───────────┘                        │  migrations: drizzle-kit    │
+                                       │  organizations · users ·    │
+  /p/{publicId}  ── no auth ─────────▶ │  products · documents       │
+                                       └─────────────────────────────┘
+  uploaded files: local disk behind a StorageBackend interface (swappable)
+```
 
-- **TypeScript** - For type safety and improved developer experience
-- **TanStack Router** - File-based routing with full type safety
-- **TailwindCSS** - Utility-first CSS for rapid UI development
-- **Shared UI package** - shadcn/ui primitives live in `packages/ui`
-- **Express** - Fast, unopinionated web framework
-- **Node.js** - Runtime environment
-- **Drizzle** - TypeScript-first ORM
-- **PostgreSQL** - Database engine
+## Prerequisites
 
-## Getting Started
+- **Node.js 20+**
+- **pnpm 10** — the repo pins `pnpm@10.26.2` via `packageManager`, so `corepack enable`
+  gets you the right version (or `npm i -g pnpm`)
+- **PostgreSQL running on `localhost:5432`** — no Docker in this repo (deliberate, see
+  below). Any existing database works; the default `postgres` database is fine.
 
-First, install the dependencies:
+## How to run it
+
+**1. Create the two env files** (not committed). These values work as-is — only the
+user/password in `DATABASE_URL` may need to match your local Postgres:
+
+`apps/server/.env`
+
+```env
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres
+JWT_SECRET=any-random-string
+CORS_ORIGIN=http://localhost:3001
+```
+
+`apps/web/.env`
+
+```env
+VITE_SERVER_URL=http://localhost:3000
+```
+
+**2. Two commands:**
 
 ```bash
-pnpm install
+pnpm bootstrap   # installs dependencies, runs migrations, seeds demo data
+pnpm dev         # starts API on :3000 and web on :3001
 ```
 
-## Database Setup
+Open <http://localhost:3001> and log in with the credentials below.
 
-This project uses PostgreSQL with Drizzle ORM.
-
-1. Make sure you have a PostgreSQL database set up.
-2. Update your `apps/server/.env` file with your PostgreSQL connection details.
-
-3. Apply the schema to your database:
+Optional extras:
 
 ```bash
-pnpm run db:push
+pnpm db:studio   # browse the DB in Drizzle Studio
+pnpm db:seed     # reset the DB to the seeded state (truncates all tables first)
+pnpm dev:web     # run only the frontend
+pnpm dev:server  # run only the API
 ```
 
-Then, run the development server:
+## Seeded credentials
 
-```bash
-pnpm run dev
-```
+| Email             | Password   | Organisation |
+| ----------------- | ---------- | ------------ |
+| `user1@gmail.com` | `password` | org_1        |
+| `user2@gmail.com` | `password` | org_2        |
 
-Open [http://localhost:3001](http://localhost:3001) in your browser to see the web application.
-The API is running at [http://localhost:3000](http://localhost:3000).
+The seed creates 30 products (15 per org, roughly half already published with live
+passport URLs). Both orgs deliberately contain the same `SKU-001`…`SKU-015` — SKU
+uniqueness is **per organisation**, enforced by a DB constraint.
 
-## UI Customization
+A quick tour: log in as `user1`, open a published product, copy its passport link from
+the detail page, open it in a private window (no session needed), then unpublish and
+reload — the link 404s.
 
-React web apps in this stack share shadcn/ui primitives through `packages/ui`.
+## API surface
 
-- Change design tokens and global styles in `packages/ui/src/styles/globals.css`
-- Update shared primitives in `packages/ui/src/components/*`
-- Adjust shadcn aliases or style config in `packages/ui/components.json` and `apps/web/components.json`
+| Method                | Path                          | Notes                                          |
+| --------------------- | ----------------------------- | ---------------------------------------------- |
+| POST                  | `/api/auth/login` / `logout`  | JWT in signed httpOnly cookie                  |
+| GET                   | `/api/auth/me`                | current user + org                             |
+| GET                   | `/api/products`               | own org only; pagination, search, filters      |
+| POST / GET / PATCH / DELETE | `/api/products(/:id)`   | CRUD, org-scoped; publish = `PATCH {status}`   |
+| GET                   | `/api/p/:publicId`            | public passport; published only, field allowlist |
+| POST / GET            | `/api/products/:id/documents` | upload (PDF/PNG/JPG, ≤5 MB) and list           |
+| GET                   | `/api/documents/:id`          | file bytes; own org, or anyone while published |
 
-### Add more shared components
-
-Run this from the project root to add more primitives to the shared UI package:
-
-```bash
-npx shadcn@latest add accordion dialog popover sheet table -c packages/ui
-```
-
-Import shared components like this:
-
-```tsx
-import { Button } from "@Productlytics/ui/components/button";
-```
-
-### Add app-specific blocks
-
-If you want to add app-specific blocks instead of shared primitives, run the shadcn CLI from `apps/web`.
-
-## Project Structure
+## Project structure
 
 ```
 Productlytics/
 ├── apps/
-│   ├── web/         # Frontend application (React + TanStack Router)
-│   └── server/      # Backend API (Express)
-├── packages/
-│   ├── ui/          # Shared shadcn/ui components and styles
-│   └── db/          # Database schema & queries
+│   ├── web/          # React + TanStack Router/Query (Vite, :3001)
+│   └── server/       # Express 5 API (:3000) — routes/, lib/ (session, storage)
+└── packages/
+    ├── db/           # Drizzle schema (one file per table), migrations, seed
+    ├── ui/           # shared UI primitives (Base UI + Tailwind)
+    ├── env/          # zod-validated env schemas (server + web)
+    └── config/       # shared tsconfig
 ```
-
-## Available Scripts
-
-- `pnpm run dev`: Start all applications in development mode
-- `pnpm run build`: Build all applications
-- `pnpm run dev:web`: Start only the web application
-- `pnpm run dev:server`: Start only the server
-- `pnpm run check-types`: Check TypeScript types across all apps
-- `pnpm run db:push`: Push schema changes to database
-- `pnpm run db:generate`: Generate database client/types
-- `pnpm run db:migrate`: Run database migrations
-- `pnpm run db:studio`: Open database studio UI
