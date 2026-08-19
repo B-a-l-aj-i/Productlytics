@@ -1,3 +1,4 @@
+import { Button } from "@Productlytics/ui/components/button";
 import {
   Card,
   CardAction,
@@ -8,7 +9,8 @@ import {
 } from "@Productlytics/ui/components/card";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Copy } from "lucide-react";
+import { toast } from "sonner";
 
 import { getProduct, type ProductListResponse } from "@/api/products";
 import { DeleteProduct } from "@/components/products/delete-product";
@@ -90,6 +92,30 @@ function ProductDetailPage() {
               </div>
             )}
           </div>
+
+          {p.status === "published" && p.publicId && (
+            <div className="mt-2 flex items-center justify-between gap-2 border-t pt-3">
+              <div className="min-w-0">
+                <p className="text-muted-foreground">Public passport link</p>
+                <p className="truncate text-xs">
+                  {`${window.location.origin}/p/${p.publicId}`}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Copy public link"
+                onClick={() => {
+                  navigator.clipboard.writeText(
+                    `${window.location.origin}/p/${p.publicId}`,
+                  );
+                  toast.success("Public link copied");
+                }}
+              >
+                <Copy />
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -14,6 +14,7 @@ export interface ProductResponse {
   orgId: number;
   name: string;
   sku: string;
+  publicId: string | null;
   category: "Battery" | "Steel" | "Textile" | null;
   manufacturedOn: string | null;
   countryOfOrigin: string | null;
