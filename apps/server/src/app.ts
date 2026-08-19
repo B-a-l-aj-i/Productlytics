@@ -4,6 +4,7 @@ import cors from "cors";
 import express from "express";
 
 import { authRouter } from "./routes/auth";
+import { productsRouter } from "./routes/products";
 
 export const app = express() as express.Application;
 
@@ -22,3 +23,4 @@ app.get("/", (_req, res) => {
 });
 
 app.use("/api/auth", authRouter);
+app.use("/api/products", productsRouter);
