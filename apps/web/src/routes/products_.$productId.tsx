@@ -9,8 +9,11 @@ import {
 } from "@Productlytics/ui/components/card";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Copy } from "lucide-react";
+import { ArrowLeft, Copy, Pencil } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
+
+import { EditProduct } from "@/components/products/edit-product";
 
 import { getProduct, type ProductListResponse } from "@/api/products";
 import { DeleteProduct } from "@/components/products/delete-product";
@@ -23,6 +26,7 @@ function ProductDetailPage() {
   const { productId } = Route.useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [editing, setEditing] = useState(false);
 
   const product = useQuery({
     queryKey: ["products", "detail", productId],
@@ -53,6 +57,14 @@ function ProductDetailPage() {
 
   const p = product.data;
 
+  if (editing) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-6">
+        <EditProduct product={p} onDone={() => setEditing(false)} />
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-6">
       <Link
@@ -68,11 +80,21 @@ function ProductDetailPage() {
           <CardTitle>{p.name}</CardTitle>
           <CardDescription>{p.sku}</CardDescription>
           <CardAction>
-            <DeleteProduct
-              id={p.id}
-              name={p.name}
-              onDeleted={() => navigate({ to: "/products" })}
-            />
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Edit product"
+                onClick={() => setEditing(true)}
+              >
+                <Pencil />
+              </Button>
+              <DeleteProduct
+                id={p.id}
+                name={p.name}
+                onDeleted={() => navigate({ to: "/products" })}
+              />
+            </div>
           </CardAction>
         </CardHeader>
         <CardContent className="flex flex-col gap-2 text-sm">

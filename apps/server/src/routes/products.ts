@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { db, products } from "@Productlytics/db";
 import express, { Router } from "express";
 import { and, desc, eq, ilike, or } from "drizzle-orm";
@@ -126,6 +128,88 @@ productsRouter.get("/:id", requireAuth, async (req, res) => {
     return;
   }
   res.json(product);
+});
+
+const updateProductSchema = z.object({
+  name: z.string().min(1).optional(),
+  sku: z.string().min(1).optional(),
+  category: z.enum(["Battery", "Steel", "Textile"]).nullable().optional(),
+  manufactured_on: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD")
+    .nullable()
+    .optional(),
+  country_of_origin: z
+    .string()
+    .regex(/^[A-Za-z]{2}$/, "Expected ISO 3166-1 alpha-2 code")
+    .transform((s) => s.toUpperCase())
+    .nullable()
+    .optional(),
+  status: z.enum(["draft", "published"]).optional(),
+  attributes: z.record(z.string(), z.string()).optional(),
+});
+
+productsRouter.patch("/:id", requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id < 1) {
+    res.status(400).json({ error: "Invalid product id" });
+    return;
+  }
+
+  const parsed = updateProductSchema.safeParse(req.body);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    res.status(400).json({
+      error: issue
+        ? `${issue.path.join(".")}: ${issue.message}`
+        : "Invalid request body",
+    });
+    return;
+  }
+
+  const existing = await db.query.products.findFirst({
+    where: and(eq(products.id, id), eq(products.orgId, req.user!.orgId)),
+  });
+  if (!existing) {
+    res.status(404).json({ error: "Product not found" });
+    return;
+  }
+
+  const input = parsed.data;
+  const set: Partial<typeof products.$inferInsert> = {};
+  if (input.name !== undefined) set.name = input.name;
+  if (input.sku !== undefined) set.sku = input.sku;
+  if (input.category !== undefined) set.category = input.category;
+  if (input.manufactured_on !== undefined) set.manufacturedOn = input.manufactured_on;
+  if (input.country_of_origin !== undefined) set.countryOfOrigin = input.country_of_origin;
+  if (input.status !== undefined) {
+    set.status = input.status;
+    // First transition to published mints the public link; it never rotates.
+    if (input.status === "published" && !existing.publicId) {
+      set.publicId = randomUUID();
+    }
+  }
+  if (input.attributes !== undefined) set.attributes = input.attributes;
+
+  if (Object.keys(set).length === 0) {
+    res.json(existing);
+    return;
+  }
+
+  try {
+    const [updated] = await db
+      .update(products)
+      .set(set)
+      .where(eq(products.id, existing.id))
+      .returning();
+    res.json(updated);
+  } catch (err) {
+    if (isUniqueViolation(err)) {
+      res.status(409).json({ error: "SKU already exists in your organisation" });
+      return;
+    }
+    throw err;
+  }
 });
 
 productsRouter.delete("/:id", requireAuth, async (req, res) => {

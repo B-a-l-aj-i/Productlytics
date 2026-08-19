@@ -72,6 +72,37 @@ export async function getProduct(id: number): Promise<ProductResponse> {
   return res.json();
 }
 
+export interface UpdateProductInput {
+  name?: string;
+  sku?: string;
+  category?: "Battery" | "Steel" | "Textile" | null;
+  manufactured_on?: string | null;
+  country_of_origin?: string | null;
+  status?: "draft" | "published";
+  attributes?: Record<string, string>;
+}
+
+export async function updateProduct(
+  id: number,
+  data: UpdateProductInput,
+): Promise<ProductResponse> {
+  const res = await fetch(`${API_URL}/api/products/${id}`, {
+    method: "PATCH",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.error ?? "Could not update product");
+  }
+
+  return res.json();
+}
+
 export async function deleteProduct(id: number): Promise<void> {
   const res = await fetch(`${API_URL}/api/products/${id}`, {
     method: "DELETE",
