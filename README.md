@@ -144,7 +144,7 @@ Productlytics/
 
 ## With another day
 
-- Test cases — ran out of time, so couldn't think about it.
+- Test cases — I prioritized the multi-tenant and publish/unpublish within the five-hour limit. The first tests I would add are API integration tests for organisation isolation, public-link revocation, and per-organisation SKU uniqueness.
 - Delete and update for uploaded documents (remove the row, then the file via
   `storage.delete`).
 - Redirect logged-out visitors from `/products` to the login page instead of
